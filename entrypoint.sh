@@ -13,7 +13,8 @@ if [ -z "$(ls -A $CRAC_FILES_DIR)" ]; then
   fi
   sleep infinity
 else
-  java -Dmanagement.endpoint.health.probes.add-additional-paths="true" -Dmanagement.health.probes.enabled="true" -XX:CRaCRestoreFrom=$CRAC_FILES_DIR&
+  # https://docs.azul.com/core/crac/cpu-features#xxignorecpufeatures
+  java -Dmanagement.endpoint.health.probes.add-additional-paths="true" -Dmanagement.health.probes.enabled="true" -XX:CRaCRestoreFrom=$CRAC_FILES_DIR  -XX:+UnlockExperimentalVMOptions -XX:+IgnoreCPUFeatures&
   PID=$!
   trap "kill $PID" SIGINT SIGTERM
   wait $PID

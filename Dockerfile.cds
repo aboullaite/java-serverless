@@ -53,7 +53,7 @@ RUN <<EOT
        --multi-release=${JDK_VERSION} \
        --class-path 'BOOT-INF/lib/*' \
        target/*.jar > java.modules
- cat java.modules
+
  echo "Creating custom JDK runtime image in ${RUNTIME_IMAGE}..."
  INCUBATOR_MODULES=$(java --list-modules | grep -i incubator | sed 's/@.*//' | paste -sd "," - )
  $JAVA_HOME/bin/jlink \
@@ -95,8 +95,6 @@ COPY --from=MAVEN_TOOL_CHAIN_CACHE --chown=nonroot:nonroot ${APP_DIR}/target/cha
 COPY --from=MAVEN_TOOL_CHAIN_CACHE --chown=nonroot:nonroot ${APP_DIR}/app.jsa /app.jsa
 EXPOSE 8080
 EXPOSE 8081
-EXPOSE 8778
-EXPOSE 9779
 
 ENV _JAVA_OPTIONS "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=90.0 \
 -XX:+AutoCreateSharedArchive" \

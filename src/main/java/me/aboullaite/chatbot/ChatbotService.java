@@ -2,9 +2,10 @@ package me.aboullaite.chatbot;
 
 import dev.langchain4j.chain.ConversationalRetrievalChain;
 import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
-import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
+import dev.langchain4j.data.document.loader.UrlDocumentLoader;
+import dev.langchain4j.data.document.parser.TextDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
+import dev.langchain4j.data.document.transformer.HtmlTextExtractor;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.model.vertexai.VertexAiChatModel;
@@ -13,6 +14,7 @@ import dev.langchain4j.retriever.EmbeddingStoreRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -25,8 +27,15 @@ public class ChatbotService {
 
     public ConversationalRetrievalChain BuildRag() {
 
-        Path filePath = toPath("java8-21.pdf");
-        Document document = FileSystemDocumentLoader.loadDocument(filePath, new ApachePdfBoxDocumentParser());
+        URL url = null;
+        try {
+            url = new URL("https://dev.java/learn/");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        Document htmlDocument = UrlDocumentLoader.load(url, new TextDocumentParser());
+        HtmlTextExtractor transformer = new HtmlTextExtractor("#learn", null, false);
+        Document document = transformer.transform(htmlDocument);
 
         VertexAiEmbeddingModel embeddingModel = VertexAiEmbeddingModel.builder()
             .endpoint("us-central1-aiplatform.googleapis.com:443")
@@ -63,8 +72,9 @@ public class ChatbotService {
             .retriever(retriever)
             .promptTemplate(PromptTemplate.from("""
                 Answer to the following query the best as you can: {{question}}
-                Base your answer on the information provided below:
+                Base your answer on the information provided below and reference as much links from the reference as possible:
                 {{information}}
+                
                 """
             ))
             .build();
